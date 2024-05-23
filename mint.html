@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+  <meta charset="UTF-8" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>NFT Minter</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/webcomponentsjs/2.6.0/webcomponents-bundle.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/web3/1.6.1-rc.0/web3.min.js"></script>
+
+</head>
+
+<body class="bg-gray-100 flex items-center justify-center h-screen">
+
+  <nft-minter></nft-minter>
+
+
+
+  <template id="minter-template">
+
+    <div class="bg-white p-8 rounded shadow-md w-1/3">
+
+      <h1 class="text-2xl mb-4 text-center">Deploy and Mint Your NFT</h1>
+
+
+
+      <h2 class="text-xl mb-4 text-center">Mint to Existing Contract</h2>
+
+      <div>
+
+        <label for="existingContractAddress" class="block mb-2 text-sm font-bold">Contract Address:</label>
+
+        <input id="existingContractAddress" name="existingContractAddress" type="text" class="w-full px-3 py-2 border rounded" required />
+
+      </div>
+
+      
+
+      <form class="space-y-4" id="mintExistingForm">
+
+        <div>
+
+          <label for="existingTokenURI" class="block mb-2 text-sm font-bold">Token URI:</label>
+
+          <input id="existingTokenURI" name="existingTokenURI" type="text" class="w-full px-3 py-2 border rounded" required />
+
+        </div>
+
+        <div>
+
+          <label for="existingMintQuantity" class="block mb-2 text-sm font-bold">Quantity:</label>
+
+          <input id="existingMintQuantity" name="existingMintQuantity" type="number" class="w-full px-3 py-2 border rounded" min="1" value="1" required />
+
+        </div>
+
+        <button type="submit" class="w-full py-2 bg-blue-500 text-white rounded">Mint NFT(s)</button>
+
+      </form>
+
+
+
+      <h2 class="text-xl mt-6 mb-4 text-center">Create New Contract</h2>
+
+      <form class="space-y-4" id="mintNewForm">
+
+        <div>
+
+          <label for="contractName" class="block mb-2 text-sm font-bold">Contract Name:</label>
+
+          <input id="contractName" name="contractName" type="text" class="w-full px-3 py-2 border rounded" required />
+
+        </div>
+
+        <div>
+
+          <label for="contractSymbol" class="block mb-2 text-sm font-bold">Contract Symbol:</label>
+
+          <input id="contractSymbol" name="contractSymbol" type="text" class="w-full px-3 py-2 border rounded" required />
+
+        </div>
+
+        <button type="submit" class="w-full py-2 bg-blue-500 text-white rounded">Deploy and Mint NFT</button>
+
+      </form>
+
+
+
+      <h2 class="text-xl mt-6 mb-4 text-center">List NFTs</h2>
+
+      <form class="space-y-4" id="listNftsForm">
+
+        <button type="submit" class="w-full py-2 bg-blue-500 text-white rounded">List NFTs</button>
+
+      </form>
+
+      <div id="nftList" class="mt-4"></div>
+
+
+
+      <div id="loadingIndicator" class="text-center mt-4 hidden">
+
+        <span>Loading...</span>
+
+      </div>
+
+    </div>
+
+  </template>
+
+
+
+  <script type="module">
+
+    import { abi, bytecode } from "./contract.js";
+
+
+
+    class NFTMinter extends HTMLElement {
+
+      constructor() {
+
+        super();
+
+        const template = document.getElementById("minter-template").content;
+
+        this.attachShadow({ mode: "open" }).appendChild(template.cloneNode(true));
+
+        this.switchToPolygonNetwork();
+
+        this.handleSubmitNew = this.handleSubmitNew.bind(this);
+
+        this.handleSubmitExisting = this.handleSubmitExisting.bind(this);
+
+        this.handleListNfts = this.handleListNfts.bind(this);
+
+        this.showLoading(false);
+
+      }
+
+
+
+      async switchToPolygonNetwork() {
+
+        if (window.ethereum) {
+
+          try {
+
+            const chainId = "0x89"; // Polygon Mainnet
+
+            await window.ethereum.request({ method: "wallet_switchEthereumChain", params: [{ chainId }] });
+
+            window.web3 = new Web3(window.ethereum);
+
+            await window.ethereum.enable();
+
+          } catch (err) {
+
+            if (err.code === 4902) {
+
+              try {
+
+                await window.ethereum.request({
+
+                  method: "wallet_addEthereumChain",
+
+                  params: [{
+
+                    chainId,
+
+                    chainName: "Polygon Mainnet",
+
+                    rpcUrls: ["https://rpc-mainnet.matic.network/"],
+
+                    nativeCurrency: { name: "MATIC", symbol: "MATIC", decimals: 18 },
+
+                    blockExplorerUrls: ["https://polygonscan.com/"]
+
+                  }]
+
+                });
+
+                window.web3 = new Web3(window.ethereum);
+
+                await window.ethereum.enable();
+
+              } catch (addError) {
+
+                alert("Failed to add the Polygon network to MetaMask: " + addError.message);
+
+              }
+
+            } else {
+
+              alert("Failed to switch to the Polygon network: " + err.message);
+
+            }
+
+          }
+
+        } else {
+
+          alert("Please install MetaMask to use this app.");
+
+        }
+
+      }
+
+
+
+      connectedCallback() {
+
+        this.shadowRoot.querySelector("#mintNewForm").addEventListener("submit", this.handleSubmitNew);
+
+        this.shadowRoot.querySelector("#mintExistingForm").addEventListener("submit", this.handleSubmitExisting);
+
+        this.shadowRoot.querySelector("#listNftsForm").addEventListener("submit", this.handleListNfts);
+
+      }
+
+
+
+      disconnectedCallback() {
+
+        this.shadowRoot.querySelector("#mintNewForm").removeEventListener("submit", this.handleSubmitNew);
+
+        this.shadowRoot.querySelector("#mintExistingForm").removeEventListener("submit", this.handleSubmitExisting);
+
+        this.shadowRoot.querySelector("#listNftsForm").removeEventListener("submit", this.handleListNfts);
+
+      }
+
+
+
+      async fetchPolygonGasPrice() {
+
+        const response = await fetch("https://gasstation.polygon.technology/v2");
+
+        const data = await response.json();
+
+        return data.fast; // Use 'fast' gas price for faster transactions
+
+      }
+
+
+
+      async mintNFT(contract, tokenURI, quantity) {
+
+        const accounts = await web3.eth.getAccounts();
+
+        try {
+
+          const gasPrice = await this.fetchPolygonGasPrice();
+
+          console.log("Minting NFT...", contract, tokenURI);
+
+          for (let i = 0; i < quantity; i++) {
+
+            await contract.methods.safeMint(accounts[0], tokenURI).send({
+
+              from: accounts[0],
+
+              gasPrice: web3.utils.toWei(gasPrice.maxFee.toString(), "gwei")
+
+            });
+
+          }
+
+          this.showLoading(false);
+
+          alert("NFT(s) Minted!");
+
+        } catch (error) {
+
+          this.showLoading(false);
+
+          console.error("Error minting NFT:", error);
+
+        }
+
+      }
+
+
+
+      async handleSubmitExisting(event) {
+
+        event.preventDefault();
+
+        const contractAddress = this.shadowRoot.querySelector("#existingContractAddress").value;
+
+        const tokenURI = this.shadowRoot.querySelector("#existingTokenURI").value;
+
+        const quantity = this.shadowRoot.querySelector("#existingMintQuantity").value;
+
+
+
+        if (web3.utils.isAddress(contractAddress)) {
+
+          const contract = new web3.eth.Contract(abi, contractAddress);
+
+          this.mintNFT(contract, tokenURI, quantity);
+
+        } else {
+
+          alert("Invalid contract address.");
+
+        }
+
+      }
+
+
+
+      async handleSubmitNew(event) {
+
+        event.preventDefault();
+
+        const contractName = this.shadowRoot.querySelector("#contractName").value;
+
+        const contractSymbol = this.shadowRoot.querySelector("#contractSymbol").value;
+
+        const tokenURI = this.shadowRoot.querySelector("#existingTokenURI").value;
+
+        const accounts = await web3.eth.getAccounts();
+
+        const contract = new web3.eth.Contract(abi);
+
+
+
+        try {
+
+          this.toggleForm("#mintNewForm", false);
+
+          const gasPrice = await this.fetchPolygonGasPrice();
+
+          const estimatedGas = await contract.deploy({ data: bytecode, arguments: [contractName, contractSymbol, accounts[0]] }).estimateGas({ from: accounts[0] });
+
+
+
+          const newContractInstance = await contract.deploy({ data: bytecode, arguments: [contractName, contractSymbol, accounts[0]] }).send({
+
+            from: accounts[0],
+
+            gas: estimatedGas + 200000, // Add some buffer to the estimated gas
+
+            gasPrice: web3.utils.toWei(gasPrice.maxFee.toString(), "gwei")
+
+          });
+
+
+
+          alert("Contract deployed successfully! Address: " + newContractInstance._address);
+
+          this.shadowRoot.querySelector("#existingContractAddress").value = newContractInstance._address;
+
+        } catch (error) {
+
+          this.showLoading(false);
+
+          console.error("Error in contract deployment or minting:", error);
+
+        } finally {
+
+          this.toggleForm("#mintNewForm", true);
+
+        }
+
+      }
+
+
+
+      async handleListNfts(event) {
+
+        event.preventDefault();
+
+        const contractAddress = this.shadowRoot.querySelector("#existingContractAddress").value;
+
+
+
+        if (web3.utils.isAddress(contractAddress)) {
+
+          const contract = new web3.eth.Contract(abi, contractAddress);
+
+          const tokenCount = await contract.methods.totalSupply().call();
+
+
+
+          let nftListHtml = "<h3 class='text-center mb-4'>NFTs:</h3><ul class='list-disc pl-5'>";
+
+
+
+          for (let i = 0; i < tokenCount; i++) {
+
+            const tokenId = await contract.methods.tokenByIndex(i).call();
+
+            const tokenUri = await contract.methods.tokenURI(tokenId).call();
+
+            nftListHtml += `<li>Token ID: ${tokenId}, URI: <a href="${tokenUri}" target="_blank">${tokenUri}</a></li>`;
+
+          }
+
+
+
+          nftListHtml += "</ul>";
+
+          this.shadowRoot.querySelector("#nftList").innerHTML = nftListHtml;
+
+        } else {
+
+          alert("Invalid contract address.");
+
+        }
+
+      }
+
+
+
+      toggleForm(formSelector, enable) {
+
+        const formElements = this.shadowRoot.querySelectorAll(`${formSelector} input, ${formSelector} button`);
+
+        formElements.forEach(el => {
+
+          el.disabled = !enable;
+
+        });
+
+      }
+
+
+
+      showLoading(message) {
+
+        const loadingIndicator = this.shadowRoot.querySelector("#loadingIndicator");
+
+        loadingIndicator.querySelector("span").textContent = message || "";
+
+        loadingIndicator.classList.toggle("hidden", !message);
+
+      }
+
+    }
+
+
+
+    customElements.define("nft-minter", NFTMinter);
+
+  </script>
+
+</body>
+
+</html>

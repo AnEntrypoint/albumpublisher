@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang=en>
+
+<head>
+  <meta charset=UTF-8>
+  <meta name=viewport content="width=device-width,initial-scale=1">
+  <title>Web Components with Routing & Music Player</title>
+  <link href=https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css rel=stylesheet>
+  <style>
+    .hidden {
+      display: none;
+    }
+
+    .playlist-item:hover {
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body class="flex bg-gray-100 dark:bg-gray-900 dark:text-gray-100 flex-col min-h-screen text-gray-800">
+  <header class="text-gray-800 bg-white p-4">
+    <h1 id="header-title" class=text-3xl>Artist Name</h1>
+  </header>
+  <div class="flex flex-1">
+    <aside class="text-gray-800 bg-white p-4 w-1/4">
+      <nav>
+        <ul>
+          <li><a class="py-2 block" href=#now-playing>Now Playing</a></li>
+          <li><a class="py-2 block" href=#bio>Bio</a></li>
+          <li><a class="py-2 block" href=#links>Links</a></li>
+        </ul>
+      </nav>
+    </aside>
+    <main id=main-content class="p-4 w-3/4"><!-- The content for each page will be dynamically injected here --></main>
+  </div>
+  <!-- Music Player Container -->
+  <div id=player-container class="pl-4 pr-4 bg-white bottom-0 fixed left-0 right-0 shadow">
+    <music-player class=hidden></music-player>
+    <div class="flex items-center justify-between mt-4">
+      <div id=now-playing class="flex items-center"><!-- Now playing content will be dynamically injected here --></div>
+      <div class="flex justify-center items-center">
+        <button id=prev-button class="p-3 rounded-full bg-gray-200 hover:bg-gray-300 focus:outline-none">
+          <svg width="64px" height="64px" viewBox="0 0 24 24" class="w-4 h-4 text-gray-600" fill="none"
+            xmlns="http://www.w3.org/2000/svg" transform="matrix(-1, 0, 0, 1, 0, 0)">
+            <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+            <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+            <g id="SVGRepo_iconCarrier">
+              <path
+                d="M16.6598 14.6474C18.4467 13.4935 18.4467 10.5065 16.6598 9.35258L5.87083 2.38548C4.13419 1.26402 2 2.72368 2 5.0329V18.9671C2 21.2763 4.13419 22.736 5.87083 21.6145L16.6598 14.6474Z"
+                fill="#000000"></path>
+              <path
+                d="M22.75 5C22.75 4.58579 22.4142 4.25 22 4.25C21.5858 4.25 21.25 4.58579 21.25 5V19C21.25 19.4142 21.5858 19.75 22 19.75C22.4142 19.75 22.75 19.4142 22.75 19V5Z"
+                fill="#000000"></path>
+            </g>
+          </svg>
+        </button>
+        <button id=play-button class="p-4 rounded-full bg-gray-200 hover:bg-gray-300 focus:outline-none mx-4">
+          <svg xmlns="http://www.w3.org/2000/svg" class="group-hover:fill-white group-hover:stroke-white" width="28"
+            height="28" viewBox="0 0 24 24" stroke-width="1.5" stroke="#7e9cff" fill="#7e9cff" stroke-linecap="round"
+            stroke-linejoin="round">
+            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+            <path d="M7 4v16l13 -8z"></path>
+          </svg>
+        </button>
+        <button id=pause-button class="p-4 rounded-full bg-gray-200 hover:bg-gray-300 focus:outline-none mx-4 hidden">
+          <svg width="64px" height="64px" viewBox="0 0 24 24" class="w-6 h-6 text-gray-600" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+            <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+            <g id="SVGRepo_iconCarrier">
+              <path d="M2 6C2 4.11438 2 3.17157 2.58579 2.58579C3.17157 2 4.11438 2 6 2C7.88562 2 8.82843 2 9.41421 2.58579C10 3.17157 10 4.11438 10 6V18C10 19.8856 10 20.8284 9.41421 21.4142C8.82843 22 7.88562 22 6 22C4.11438 22 3.17157 22 2.58579 21.4142C2 20.8284 2 19.8856 2 18V6Z" fill="#000000"></path>
+              <path d="M14 6C14 4.11438 14 3.17157 14.5858 2.58579C15.1716 2 16.1144 2 18 2C19.8856 2 20.8284 2 21.4142 2.58579C22 3.17157 22 4.11438 22 6V18C22 19.8856 22 20.8284 21.4142 21.4142C20.8284 22 19.8856 22 18 22C16.1144 22 15.1716 22 14.5858 21.4142C14 20.8284 14 19.8856 14 18V6Z" fill="#000000"></path>
+            </g>
+          </svg>        </button>
+        <button id=next-button class="p-3 rounded-full bg-gray-200 hover:bg-gray-300 focus:outline-none">
+          <svg width="64px" height="64px" viewBox="0 0 24 24" class="w-4 h-4 text-gray-600" fill="none"
+            xmlns="http://www.w3.org/2000/svg">
+            <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+            <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+            <g id="SVGRepo_iconCarrier">
+              <path
+                d="M16.6598 14.6474C18.4467 13.4935 18.4467 10.5065 16.6598 9.35258L5.87083 2.38548C4.13419 1.26402 2 2.72368 2 5.0329V18.9671C2 21.2763 4.13419 22.736 5.87083 21.6145L16.6598 14.6474Z"
+                fill="#000000"></path>
+              <path
+                d="M22.75 5C22.75 4.58579 22.4142 4.25 22 4.25C21.5858 4.25 21.25 4.58579 21.25 5V19C21.25 19.4142 21.5858 19.75 22 19.75C22.4142 19.75 22.75 19.4142 22.75 19V5Z"
+                fill="#000000"></path>
+            </g>
+          </svg>
+        </button>
+      </div>
+      <div class="flex items-center">
+        <button id=playlist-toggle class="py-2 px-4 rounded bg-white ml-2">Show</button>
+        <input type=range id=volume-control min=0 max=100 value=50 class=ml-4>
+        <button id=mute-button class="py-2 px-4 rounded bg-gray-500 ml-2">Mute</button>
+      </div>
+    </div>
+    <progress id=progress-bar value=0 max=100 class="h-4 mt-2 w-full"></progress>
+  </div>
+  <script type=module>
+    let playlist = [];
+    let bio;
+    let links;
+
+    let coverart;
+    class Router {
+      constructor(defaultRoute) {
+        this.routes = {};
+        this.defaultRoute = defaultRoute;
+        window.addEventListener('hashchange', () => this.routeChanged());
+        this.routeChanged();
+      }
+      addRoute(path, content) {
+        this.routes[path] = content;
+      }
+      async routeChanged() {
+        const hashLocation = window.location.hash.substring(1) || this.defaultRoute;
+        const pageContent = this.routes[hashLocation] || this.routes[this.defaultRoute];
+        document.getElementById('main-content').innerHTML = `<div>${pageContent}</div>`;
+        this.injectNowPlaying();
+      }
+      injectNowPlaying() {
+        if (window.location.hash.substring(1) === 'now-playing') {
+          const musicPlayerComponent = document.querySelector('music-player');
+          if (musicPlayerComponent) {
+            musicPlayerComponent.updateNowPlaying();
+          }
+        }
+      }
+    }
+    class MusicPlayer extends HTMLElement {
+      connectedCallback() {
+        this.innerHTML = this.getTemplate();
+        this.audios = this.querySelectorAll('audio');
+        this.progressBar = document.getElementById('progress-bar');
+        this.currentIndex = 0;
+        this.updateNowPlaying();
+      }
+      getTemplate() {
+        return `<div class="p-4">
+                  ${playlist.map((track, index) => `
+                    <div class="playlist-item">
+                      <p class="mb-2 font-semibold">${track?.title}</p>
+                      <audio class="w-full mb-4" data-index="${index}">
+                        <source src="${track?.url}" type="audio/mp3">
+                        Your browser does not support the audio element.
+                      </audio>
+                    </div>
+                  `).join('')}
+                </div>`;
+      }
+      addEventListeners() {
+        this.audios.forEach((audio, index) => {
+          audio.addEventListener('ended', () => this.playNext(index));
+          audio.addEventListener('timeupdate', () => this.updateProgress(audio));
+        });
+        this.audios.forEach((audio) => {
+          audio.addEventListener('play', () => {
+            this.updateNowPlaying();
+            document.getElementById('pause-button').classList.remove('hidden');
+            document.getElementById('play-button').classList.add('hidden');
+          });
+          audio.addEventListener('pause', () => {
+            document.getElementById('play-button').classList.remove('hidden');
+            document.getElementById('pause-button').classList.add('hidden');
+          });
+        });
+        const volumeControl = document.getElementById('volume-control');
+        volumeControl.addEventListener('input', (event) => {
+          const volume = event.target.value / 100;
+          this.audios.forEach((audio) => {
+            audio.volume = volume;
+          });
+        });
+        document.getElementById('prev-button').addEventListener('click', () => {
+          this.playPrevious();
+        });
+        document.getElementById('next-button').addEventListener('click', () => {
+          this.playNext(this.currentIndex);
+        });
+        document.getElementById('play-button').addEventListener('click', () => {
+            this.audios[this.currentIndex].play();
+            this.updateNowPlaying();
+        });
+        document.getElementById('pause-button').addEventListener('click', () => {
+            this.audios[this.currentIndex].pause();
+            this.updateNowPlaying();
+        });
+        document.getElementById('playlist-toggle').addEventListener('click', () => {
+          const playlist = document.querySelector('music-player');
+          playlist.classList.toggle('hidden');
+          const toggleButton = document.getElementById('playlist-toggle');
+          if (!playlist.classList.contains('hidden')) {
+            toggleButton.textContent = 'Hide';
+            console.log('hide playlist')
+          } else {
+            toggleButton.textContent = 'Show';
+            console.log('show playlist')
+          }
+        });
+        document.getElementById('mute-button').addEventListener('click', () => {
+          const currentAudio = this.audios[this.currentIndex];
+          if (currentAudio.muted) {
+            currentAudio.muted = false;
+            document.getElementById('mute-button').textContent = 'Mute';
+          } else {
+            currentAudio.muted = true;
+            document.getElementById('mute-button').textContent = 'Unmute';
+          }
+        });
+      }
+      playPrevious() {
+        this.stopAllTracks();
+        if (this.currentIndex > 0) {
+          this.currentIndex--;
+        } else {
+          this.currentIndex = this.audios.length - 1;
+        }
+        this.audios[this.currentIndex].play();
+        this.updateNowPlaying();
+      }
+      playNext(index) {
+        this.stopAllTracks();
+        if (index < this.audios.length - 1) {
+          this.currentIndex = index + 1;
+          this.audios[this.currentIndex].play();
+        } else {
+          this.currentIndex = 0;
+          this.audios[this.currentIndex].play();
+        }
+        this.updateNowPlaying();
+      }
+      updateProgress(audio) {
+        const percentage = (audio.currentTime / audio.duration) * 100;
+        this.progressBar.value = percentage;
+      }
+      updateNowPlaying() {
+        if(!coverart) return
+        const nowPlayingElement = document.getElementById('now-playing');
+        const track = playlist[this.currentIndex];
+        const imageUrl = track?.imageUrl;
+        const placeholderUrl = coverart;
+        const imgTag = `<img src="${imageUrl||coverart}" alt="Now Playing" class="inline-block h-8 w-8" />`;
+        nowPlayingElement.innerHTML = `${imgTag}<span>${track?.title}</span>`;
+        const nowPlayingPage = document.querySelector('now-playing-page');
+        if (nowPlayingPage) {
+          const largeImgTag = `<img src="${imageUrl||coverart}"  alt="${track?.title}" class="inline-block h-32 w-32" />`;
+          nowPlayingPage.innerHTML = `${largeImgTag}<h2 class="text-3xl mt-4">${track?.title}</h2><p class="mt-2">${track?.bio}</p>`;
+        }
+      }
+      updatePlaylist() {
+        this.innerHTML = this.getTemplate();
+        this.audios = this.querySelectorAll('audio');
+        this.updateNowPlaying();
+      }
+      stopAllTracks() {
+        this.audios.forEach((audio, i) => {
+          audio.pause();
+          audio.currentTime = 0;
+        });
+      }
+    }
+    customElements.define('music-player', MusicPlayer);
+    document.addEventListener('DOMContentLoaded', async () => {
+      const router = new Router('now-playing');
+      router.addRoute('now-playing', '<now-playing-page></now-playing-page>');
+      router.addRoute('bio', '<bio-page></bio-page>');
+      router.addRoute('links', '<links-page></links-page>');
+      router.addRoute('contact', '<contact-page></contact-page>');
+      router.addRoute('profile', '<profile-page></profile-page>');
+      customElements.define('now-playing-page', class extends HTMLElement {
+        connectedCallback() {
+          const musicPlayerComponent = document.querySelector('music-player');
+          if (musicPlayerComponent) {
+            musicPlayerComponent.updateNowPlaying();
+          }
+        }
+      });
+      customElements.define('bio-page', class extends HTMLElement {
+        connectedCallback() {
+          const bioBox = document.createElement('bio-box');
+          this.appendChild(bioBox);
+        }
+      });
+      customElements.define('links-page', class extends HTMLElement {
+        connectedCallback() {
+          const linksBox = document.createElement('links-box');
+          this.appendChild(linksBox);
+        }
+      });
+      customElements.define('bio-box', class extends HTMLElement {
+        connectedCallback() {
+          this.innerHTML = `<h1 class="text-2xl font-bold">Bio</h1>
+                            <p>${bio}</p>`;
+        }
+      });
+      customElements.define('links-box', class extends HTMLElement {
+        connectedCallback() {
+          this.innerHTML = `<h1 class="text-2xl font-bold">Links</h1>
+                            <p>${links}</p>`;
+        }
+      });
+      customElements.define('contact-page', class extends HTMLElement {
+        connectedCallback() {
+          this.innerHTML = `<h1 class="text-2xl font-bold">Contact Page</h1>`;
+        }
+      });
+      customElements.define('profile-page', class extends HTMLElement {
+        connectedCallback() {
+          this.innerHTML = `<h1 class="text-2xl font-bold">Profile Page</h1>`;
+        }
+      });
+      const hashLocation = window.location.hash.substring(1) || this.defaultRoute;
+      const  fetchAndUpdatePlaylist = async (hash) => {
+        const url = `https://gateway.irys.xyz/${hash}`;
+        try {
+          const response = await fetch(url);
+          const data = await response.json();
+          coverart = data.coverArtUrl
+          // Update the playlist, title, and bio
+          playlist = data.items || [];
+          links = data.links || "";
+          bio = data.bio || "";
+          console.log({data})
+          document.getElementById('header-title').textContent = data.title || 'Artist Name';
+          const musicPlayerComponent = document.querySelector('music-player');
+          if (musicPlayerComponent) {
+            musicPlayerComponent.updatePlaylist();
+          }
+          musicPlayerComponent.addEventListeners();
+
+        }  catch (error) {
+          console.error('Error fetching playlist:', error);
+        }
+      }
+      await fetchAndUpdatePlaylist(hashLocation);
+      window.location.hash = '#now-playing';
+      router.routeChanged(); // Ensure correct content is displayed on load
+    });
+</script>
+</body>
+
+</html>

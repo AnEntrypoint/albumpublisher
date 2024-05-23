@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+  <meta charset="UTF-8" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Playlist Manager</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@^2.0/dist/tailwind.min.css" rel="stylesheet" />
+
+  <style>
+
+    .progress {
+
+      width: 100%;
+
+      background-color: #f3f3f3;
+
+    }
+
+    .progress-bar {
+
+      width: 0%;
+
+      height: 30px;
+
+      background-color: #4caf50;
+
+      text-align: center;
+
+      line-height: 30px;
+
+      color: white;
+
+    }
+
+    .hidden {
+
+      display: none;
+
+    }
+
+    .tab {
+
+      cursor: pointer;
+
+      padding: 10px;
+
+    }
+
+    .active-tab {
+
+      background-color: #e2e8f0;
+
+    }
+
+  </style>
+
+</head>
+
+<body class="bg-gray-100 text-gray-800">
+
+  <div class="container mx-auto p-4">
+
+    <h1 class="text-3xl font-bold mb-4">Playlist Manager</h1>
+
+
+
+    <form action="/upload-cover" method="post" enctype="multipart/form-data" class="mb-6">
+
+      <label for="cover" class="block text-sm font-medium text-gray-700 mb-1">Upload Cover Art:</label>
+
+      <input type="file" name="cover" id="cover" required class="border border-gray-300 rounded p-2 w-full mb-2">
+
+      <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">Upload Cover Art</button>
+
+    </form>
+
+
+
+    <% if (playlist.coverArt) { %>
+
+      <h2 class="text-2xl font-bold mb-4">Current Cover Art</h2>
+
+      <img src="<%= playlist.coverArt %>" alt="Cover Art" class="w-48 h-auto mb-6" />
+
+    <% } %>
+
+
+
+    <h2 class="text-2xl font-bold mb-4">Update Info</h2>
+
+    <form action="/update-info" method="post" class="mb-6">
+
+
+
+      <!-- Title Section -->
+
+      <label for="title" class="block text-sm font-medium text-gray-700 mb-1">Title:</label>
+
+      <div class="mb-2">
+
+        <span class="tab px-4 py-2" data-target="titleRaw">Raw</span>
+
+        <span class="tab bg-gray-200 px-4 py-2 active-tab" data-target="titlePreview">Preview</span>
+
+      </div>
+
+      <!-- Title Raw Text -->
+
+      <textarea name="title" id="titleRaw" required class="border border-gray-300 rounded p-2 w-full mb-2 hidden"><%- playlist.title %></textarea>
+
+      <!-- Title Contenteditable Preview -->
+
+      <div id="titlePreview" contenteditable="true" class="border border-gray-300 rounded p-2 w-full mb-2"><%- playlist.title %></div>
+
+
+
+      <!-- Artist Section -->
+
+      <label for="artist" class="block text-sm font-medium text-gray-700 mb-1">Artist:</label>
+
+      <div class="mb-2">
+
+        <span class="tab px-4 py-2" data-target="artistRaw">Raw</span>
+
+        <span class="tab bg-gray-200 px-4 py-2 active-tab" data-target="artistPreview">Preview</span>
+
+      </div>
+
+      <!-- Artist Raw Text -->
+
+      <textarea name="artist" id="artistRaw" required class="border border-gray-300 rounded p-2 w-full mb-2 hidden"><%- playlist.artist %></textarea>
+
+      <!-- Artist Contenteditable Preview -->
+
+      <div id="artistPreview" contenteditable="true" class="border border-gray-300 rounded p-2 w-full mb-2"><%- playlist.artist %></div>
+
+
+
+      <!-- Bio Section -->
+
+      <label for="bio" class="block text-sm font-medium text-gray-700 mb-1">Bio:</label>
+
+      <div class="mb-2">
+
+        <span class="tab px-4 py-2" data-target="bioRaw">Raw</span>
+
+        <span class="tab bg-gray-200 px-4 py-2 active-tab" data-target="bioPreview">Preview</span>
+
+      </div>
+
+      <!-- Bio Raw Text -->
+
+      <textarea name="bio" id="bioRaw" required class="border border-gray-300 rounded p-2 w-full mb-2 hidden"><%- playlist.bio %></textarea>
+
+      <!-- Bio Contenteditable Preview -->
+
+      <div id="bioPreview" contenteditable="true" class="border border-gray-300 rounded p-2 w-full mb-2"><%- playlist.bio %></div>
+
+
+
+      <!-- Links Section -->
+
+      <label for="links" class="block text-sm font-medium text-gray-700 mb-1">Links:</label>
+
+      <div class="mb-2">
+
+        <span class="tab px-4 py-2" data-target="linksRaw">Raw</span>
+
+        <span class="tab bg-gray-200 px-4 py-2 active-tab" data-target="linksPreview">Preview</span>
+
+      </div>
+
+      <!-- Links Raw Text -->
+
+      <textarea name="links" id="linksRaw" class="border border-gray-300 rounded p-2 w-full mb-2 hidden"><%- playlist.links %></textarea>
+
+      <!-- Links Contenteditable Preview -->
+
+      <div id="linksPreview" contenteditable="true" class="border border-gray-300 rounded p-2 w-full mb-2"><%- playlist.links %></div>
+
+
+
+      <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">Update Info</button>
+
+    </form>
+
+
+
+    <h2 class="text-2xl font-bold mb-4">Upload New Track</h2>
+
+    <form id="uploadTrackForm" enctype="multipart/form-data" class="mb-6">
+
+      <input type="hidden" name="trackNum" id="trackNum" value="<%= nextTrackNum %>">
+
+
+
+      <label for="track" class="block text-sm font-medium text-gray-700 mb-1">Track File:</label>
+
+      <input type="file" name="track" id="track" required class="border border-gray-300 rounded p-2 w-full mb-2">
+
+
+
+      <label for="image" class="block text-sm font-medium text-gray-700 mb-1">Track Image:</label>
+
+      <input type="file" name="image" id="image" class="border border-gray-300 rounded p-2 w-full mb-2">
+
+
+
+      <label for="bio" class="block text-sm font-medium text-gray-700 mb-1">Track Bio:</label>
+
+      <textarea name="bio" id="bio" class="border border-gray-300 rounded p-2 w-full mb-2"></textarea>
+
+
+
+      <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">Upload Track</button>
+
+    </form>
+
+
+
+    <div id="uploadProgress" class="progress mb-6">
+
+      <div id="progressBar" class="progress-bar">0%</div>
+
+    </div>
+
+
+
+    <h2 class="text-2xl font-bold mb-4">Current Tracks</h2>
+
+    <ul class="list-disc pl-5">
+
+      <% playlist.tracks.forEach((track) => { %>
+
+        <li class="mb-4 border p-4 rounded bg-white">
+
+          <form action="/upload-track" method="post" enctype="multipart/form-data">
+
+            <input type="hidden" name="trackNum" value="<%= track.num %>">
+
+
+
+            <label class="block text-sm font-medium text-gray-700 mb-1">Track <%= track.num %>:</label>
+
+
+
+            <% if (track.image) { %>
+
+              <img src="<%= track.image %>" alt="Track Image" class="w-12 h-auto mb-2" />
+
+            <% } %>
+
+
+
+            <label for="track<%= track.num %>" class="block text-sm font-medium text-gray-700 mb-1">Track File:</label>
+
+            <input type="file" name="track" id="track<%= track.num %>" class="border border-gray-300 rounded p-2 w-full mb-2">
+
+
+
+            <label for="image<%= track.num %>" class="block text-sm font-medium text-gray-700 mb-1">Track Image (Optional):</label>
+
+            <input type="file" name="image" id="image<%= track.num %>" class="border border-gray-300 rounded p-2 w-full mb-2">
+
+
+
+            <!-- Track Bio Section -->
+
+            <label for="bio<%= track.num %>" class="block text-sm font-medium text-gray-700 mb-1">Track Bio (Optional):</label>
+
+            <div class="mb-2">
+
+              <span class="tab px-4 py-2" data-target="trackBioRaw<%= track.num %>">Raw</span>
+
+              <span class="tab bg-gray-200 px-4 py-2 active-tab" data-target="trackBioPreview<%= track.num %>">Preview</span>
+
+            </div>
+
+
+
+            <!-- Track Bio Raw Text -->
+
+            <textarea name="bio" id="trackBioRaw<%= track.num %>" class="border border-gray-300 rounded p-2 w-full mb-2 hidden"><%- track.bio %></textarea>
+
+            <!-- Track Bio Contenteditable Preview -->
+
+            <div id="trackBioPreview<%= track.num %>" contenteditable="true" class="border border-gray-300 rounded p-2 w-full mb-2"><%- track.bio %></div>
+
+
+
+            <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded mb-2">Update Track</button>
+
+          </form>
+
+          <form action="/delete-track" method="post" class="inline">
+
+            <input type="hidden" name="trackNum" value="<%= track.num %>">
+
+            <button type="submit" class="text-red-500 hover:underline">Delete</button>
+
+          </form>
+
+        </li>
+
+      <% }); %>
+
+    </ul>
+
+
+
+    <div class="mt-6">
+
+      <button id="publishButton" class="bg-purple-500 text-white px-4 py-2 rounded">Publish Playlist</button>
+
+      <div id="publishResult" class="mt-2 text-green-500"></div>
+
+      <a href="/mint.html">To mint page</a>
+    </div>
+
+  </div>
+
+
+
+  <script>
+
+    // Handle tab switching
+
+    document.querySelectorAll('.tab').forEach((tab) => {
+
+      tab.addEventListener('click', function () {
+
+        const targetId = tab.getAttribute('data-target');
+
+        document.querySelectorAll('.tab').forEach((t) => t.classList.remove('bg-gray-200', 'active-tab'));
+
+        tab.classList.add('bg-gray-200', 'active-tab');
+
+
+
+        document.querySelectorAll('textarea, div[contenteditable]').forEach((element) => {
+
+          if (element.id.startsWith(targetId.replace('Preview', '').replace('Raw', ''))) {
+
+            element.classList.add('hidden');
+
+          }
+
+        });
+
+
+
+        document.getElementById(targetId).classList.remove('hidden');
+
+      });
+
+    });
+
+
+
+    // Synchronize text content between raw and preview
+
+    function syncTextAreas(input, replace) {
+
+      const textId = input.replace(replace||input, replace||input+'Raw');
+      const rawTextarea = document.getElementById( input.replace(replace, replace+'Raw'));
+      const previewDiv = document.getElementById( input.replace(replace, replace+'Preview'));
+
+      console.log({input, replace}, input.replace(replace||input, replace||input+'Raw'), input.replace(replace||input, replace||input+'Preview'), {rawTextarea, previewDiv})
+
+      rawTextarea.addEventListener('input', (e) => {
+
+        previewDiv.innerHTML = e.target.value;
+
+      });
+
+
+
+      previewDiv.addEventListener('input', (e) => {
+
+        rawTextarea.value = e.target.innerHTML;
+
+      });
+
+    }
+
+
+
+    syncTextAreas('title', 'title');
+
+    syncTextAreas('artist', 'artist');
+
+    syncTextAreas('bio', 'bio');
+
+    syncTextAreas('links', 'links');
+
+
+
+    document.querySelectorAll('[id^=trackBioRaw]').forEach((element) => {
+      const textId = element.id.replace('Raw', '');
+      syncTextAreas(textId, 'trackBio');
+    });
+
+
+
+    document.getElementById('uploadTrackForm').addEventListener('submit', function (event) {
+
+      event.preventDefault();
+
+      const form = event.target;
+
+      const formData = new FormData(form);
+
+
+
+      const xhr = new XMLHttpRequest();
+
+      xhr.open('POST', '/upload-track', true);
+
+
+
+      xhr.upload.onprogress = function (event) {
+
+        if (event.lengthComputable) {
+
+          const percentComplete = Math.floor((event.loaded / event.total) * 100);
+
+          const progressBar = document.getElementById('progressBar');
+
+          progressBar.style.width = percentComplete + '%';
+
+          progressBar.textContent = percentComplete + '%';
+
+        }
+
+      };
+
+
+
+      xhr.onload = function () {
+
+        if (xhr.status === 200) {
+
+          location.reload();
+
+        } else {
+
+          alert('Upload failed. Server responded with ' + xhr.status);
+
+        }
+
+      };
+
+
+
+      xhr.send(formData);
+
+    });
+
+
+
+    document.getElementById('publishButton').addEventListener('click', function () {
+
+      fetch('/publish', { method: 'POST' })
+
+        .then((response) => response.text())
+
+        .then((result) => {
+
+          document.getElementById('publishResult').textContent = result;
+
+        })
+
+        .catch((err) => {
+
+          document.getElementById('publishResult').textContent = 'Error publishing playlist';
+
+        });
+
+    });
+
+  </script>
+
+</body>
+
+</html>
